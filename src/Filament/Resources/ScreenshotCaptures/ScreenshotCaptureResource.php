@@ -11,6 +11,7 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
@@ -72,22 +73,74 @@ class ScreenshotCaptureResource extends Resource
             // contribute styling for free.
             ->columns([
                 Stack::make([
-                    ViewColumn::make('image')
-                        ->view('filament-screenshot-review::columns.image-with-lightbox'),
+                    // Card header — page name (clickable to live URL),
+                    // then a row of two badges (viewport + mode) so the
+                    // device variant is identifiable at a glance.
+                    // Apple-style: generous vertical rhythm between the
+                    // header / badges / image / actions so each block
+                    // reads as a discrete layer rather than a stack of
+                    // crammed rows.
                     TextColumn::make('title')
                         ->state(fn (ScreenshotCapture $r): string =>
-                            $r->screenshotPage->panel . ' · ' .
-                            ($r->screenshotPage->label ?? $r->screenshotPage->slug))
-                        ->weight('bold'),
-                    TextColumn::make('viewport_mode')
+                            $r->screenshotPage->label ?? $r->screenshotPage->slug)
+                        ->weight('bold')
+                        ->alignCenter()
+                        // Click the title to open the actual page in a new
+                        // tab — handy when a reviewer wants to verify the
+                        // live UI matches the capture before approving.
+                        ->url(fn (ScreenshotCapture $r): ?string => static::pageUrl($r))
+                        ->openUrlInNewTab()
+                        // Activates the toolbar search box. Searches across
+                        // the page's label, slug, and url so a reviewer can
+                        // jump to a capture by any of the strings they
+                        // remember.
+                        ->searchable(query: function ($query, string $search) {
+                            $term = '%' . $search . '%';
+
+                            return $query->whereHas('screenshotPage', function ($q) use ($term) {
+                                $q->where('label', 'like', $term)
+                                    ->orWhere('slug', 'like', $term)
+                                    ->orWhere('url', 'like', $term);
+                            });
+                        }),
+                    // Two side-by-side badges — viewport (info / warning /
+                    // success per device class) and mode (sun / moon icon).
+                    // Status badge intentionally omitted from the card body
+                    // since the toolbar tabs + the Approve / Request
+                    // changes buttons already convey state.
+                    // Two device badges centred together as a pair —
+                    // Filament's Split layout column would push them to
+                    // opposite edges (flex space-between), so we render
+                    // them via a tiny view that controls its own gap and
+                    // alignment.
+                    ViewColumn::make('meta')
+                        ->view('filament-screenshot-review::columns.meta-badges'),
+                    // Image last — the buttons sit underneath via the
+                    // record-action row Filament renders for free.
+                    ViewColumn::make('image')
+                        ->view('filament-screenshot-review::columns.image-with-lightbox'),
+                    // Tiny secondary timestamp under the image — relative
+                    // time (e.g. "2 minutes ago") with the absolute date
+                    // tooltipped on hover. Small, muted; helps a reviewer
+                    // know how fresh the capture is without crowding the
+                    // header.
+                    TextColumn::make('captured_at')
                         ->state(fn (ScreenshotCapture $r): string =>
-                            $r->screenshotPage->viewport . '-' . $r->screenshotPage->mode)
-                        ->badge()
-                        ->color('gray'),
-                    TextColumn::make('status')
-                        ->badge(),
-                ]),
+                            $r->captured_at?->diffForHumans() ?? '')
+                        ->tooltip(fn (ScreenshotCapture $r): ?string =>
+                            $r->captured_at?->toDayDateTimeString())
+                        ->size('xs')
+                        ->color('gray')
+                        ->alignCenter(),
+                ])
+                    ->space(3) // larger vertical gap between header, badges, image
+                    ->alignment(\Filament\Support\Enums\Alignment::Center)
+                    ->extraAttributes(['style' => 'padding: 1rem;']),
             ])
+            // Hide the column manager trigger — the cards are a single
+            // Stack column, so reordering / hiding has nothing useful to
+            // do, and the trigger just adds noise to the toolbar.
+            ->columnManager(false)
             ->filters([
                 // Panel filter dropped — the page tabs do this job, and
                 // having both in the toolbar muddied which one was active.
@@ -249,6 +302,35 @@ class ScreenshotCaptureResource extends Resource
             ->groupBy('screenshot_page_id', 'tag');
     }
 
+    /**
+     * Resolve the absolute URL of the captured page so the title can link
+     * straight to the live UI. Builds it from the catalogue's
+     * PanelDescriptor (panel host + scheme) and the page's stored path.
+     * Returns null when the catalogue isn't loaded or the panel isn't
+     * registered (in which case the title falls back to plain text).
+     */
+    protected static function pageUrl(ScreenshotCapture $r): ?string
+    {
+        if (! class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            return null;
+        }
+
+        $page = $r->screenshotPage;
+        $descriptor = \Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::get($page->panel);
+        if ($descriptor === null) {
+            return null;
+        }
+
+        $domain = rtrim((string) $descriptor->domain, '/');
+        if ($domain === '') {
+            return null;
+        }
+
+        $path = '/' . ltrim((string) $page->url, '/');
+
+        return 'https://' . $domain . $path;
+    }
+
 
     protected static function approveAction(): Action
     {
@@ -256,7 +338,7 @@ class ScreenshotCaptureResource extends Resource
             ->label('Approve')
             ->color('success')
             ->icon('heroicon-o-check')
-            ->button()  // solid filled button instead of the default text-link
+            ->outlined()  // outlined button — Apple-style soft tinted action, less shouty than solid fill
             ->visible(fn (ScreenshotCapture $r): bool =>
                 $r->status === ScreenshotStatus::PENDING)
             ->authorize(fn (ScreenshotCapture $r): bool =>
@@ -283,7 +365,7 @@ class ScreenshotCaptureResource extends Resource
             ->label('Request changes')
             ->color('warning')
             ->icon('heroicon-o-exclamation-triangle')
-            ->button()  // solid filled button instead of the default text-link
+            ->outlined()  // outlined button — Apple-style soft tinted action, less shouty than solid fill
             ->visible(fn (ScreenshotCapture $r): bool =>
                 $r->status === ScreenshotStatus::PENDING)
             ->authorize(fn (ScreenshotCapture $r): bool =>
