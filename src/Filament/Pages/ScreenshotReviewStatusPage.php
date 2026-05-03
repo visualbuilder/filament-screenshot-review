@@ -38,8 +38,8 @@ class ScreenshotReviewStatusPage extends Page
      */
     protected function panelKeys(): array
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::class)) {
-            $registered = \Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::keys();
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            $registered = \Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::keys();
 
             if ($registered !== []) {
                 return $registered;
@@ -114,8 +114,8 @@ class ScreenshotReviewStatusPage extends Page
 
     protected function descriptorLabel(string $key): string
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::class)) {
-            $descriptor = \Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::get($key);
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            $descriptor = \Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::get($key);
             if ($descriptor) {
                 return ucfirst($descriptor->panelId);
             }

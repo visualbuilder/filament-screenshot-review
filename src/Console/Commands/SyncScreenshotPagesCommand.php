@@ -89,8 +89,8 @@ class SyncScreenshotPagesCommand extends Command
             return [$key];
         }
 
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::class)) {
-            return \Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::keys();
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            return \Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::keys();
         }
 
         return [];
@@ -98,8 +98,8 @@ class SyncScreenshotPagesCommand extends Command
 
     private function panelInternalId(string $key): string
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::class)) {
-            return \Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::panelInternalId($key);
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::class)) {
+            return \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::panelInternalId($key);
         }
 
         return $key;

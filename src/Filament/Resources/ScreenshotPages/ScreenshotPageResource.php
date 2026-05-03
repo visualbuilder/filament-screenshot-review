@@ -118,8 +118,8 @@ class ScreenshotPageResource extends Resource
      */
     protected static function panelOptions(): array
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::class)) {
-            return collect(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::all())
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            return collect(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::all())
                 ->mapWithKeys(fn ($descriptor, $key) => [$key => ucfirst((string) $key)])
                 ->all();
         }

@@ -58,8 +58,8 @@ class SyncScreenshotCapturesCommand extends Command
             return [$key];
         }
 
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::class)) {
-            return \Visualbuilder\FilamentPanelScreenshotCatalogue\PanelRegistry::keys();
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            return \Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::keys();
         }
 
         return [];
@@ -136,8 +136,8 @@ class SyncScreenshotCapturesCommand extends Command
 
     private function panelInternalId(string $key): string
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::class)) {
-            return \Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::panelInternalId($key);
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::class)) {
+            return \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::panelInternalId($key);
         }
 
         return $key;
@@ -145,8 +145,8 @@ class SyncScreenshotCapturesCommand extends Command
 
     private function diskName(): string
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::class)) {
-            return \Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::disk();
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::class)) {
+            return \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::disk();
         }
 
         return (string) config('filesystems.default', 'local');
@@ -154,11 +154,11 @@ class SyncScreenshotCapturesCommand extends Command
 
     private function prefixFor(string $panelId, string $tag): string
     {
-        if (class_exists(\Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::class)) {
-            $env = \Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::resolveEnv();
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::class)) {
+            $env = \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::resolveEnv();
 
             return rtrim(
-                \Visualbuilder\FilamentPanelScreenshotCatalogue\Services\ScreenshotConfig::s3KeyPrefix($env, $panelId, $tag),
+                \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::s3KeyPrefix($env, $panelId, $tag),
                 '/',
             );
         }
