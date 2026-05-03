@@ -33,7 +33,11 @@
         "pestphp/pest": "^3.0 || ^4.0",
         "pestphp/pest-plugin-laravel": "^3.0 || ^4.0",
         "pestphp/pest-plugin-livewire": "^3.0 || ^4.0",
-        "visualbuilder/filament-panel-screenshot-catalogue": "*"
+        "visualbuilder/filament-screenshot-catalogue": "^5.0"
+    },
+    "suggest": {
+        "visualbuilder/filament-screenshot-catalogue": "Captures the screenshots this dashboard reviews — the natural pairing in the visualbuilder/filament-screenshot-* ecosystem.",
+        "visualbuilder/filament-design-system": "Mount the review plugin alongside design-system review pages on a single dev panel — convenient when designers and QA share one workspace."
     },
     "autoload": {
         "psr-4": {
