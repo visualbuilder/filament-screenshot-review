@@ -34,8 +34,10 @@ class ListScreenshotCaptures extends ListRecords
             'all' => Tab::make('All'),
         ];
 
+        $labels = $this->panelLabels();
+
         foreach ($this->panelKeys() as $key) {
-            $tabs[$key] = Tab::make(ucfirst($key))
+            $tabs[$key] = Tab::make($labels[$key] ?? \Illuminate\Support\Str::headline($key))
                 ->modifyQueryUsing(
                     fn (Builder $query) => $query->whereHas(
                         'screenshotPage',
@@ -47,6 +49,30 @@ class ListScreenshotCaptures extends ListRecords
         }
 
         return $tabs;
+    }
+
+    /**
+     * Map of panel key -> display label, sourced from PanelDescriptor::label()
+     * when the catalogue's PanelRegistry is loaded. Returns an empty map when
+     * the registry isn't present, in which case getTabs() falls back to a
+     * headlined version of the key.
+     *
+     * @return array<string, string>
+     */
+    protected function panelLabels(): array
+    {
+        if (! class_exists(\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::class)) {
+            return [];
+        }
+
+        $labels = [];
+        foreach (\Visualbuilder\FilamentScreenshotCatalogue\PanelRegistry::all() as $key => $descriptor) {
+            if (method_exists($descriptor, 'label')) {
+                $labels[$key] = $descriptor->label();
+            }
+        }
+
+        return $labels;
     }
 
     public function getDefaultActiveTab(): string
