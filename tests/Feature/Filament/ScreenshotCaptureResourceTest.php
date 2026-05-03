@@ -116,3 +116,41 @@ it('marks rows as non-selectable so the checkbox column is hidden', function ():
 
     expect($tableMethod->isStatic())->toBeTrue();
 });
+
+it('builds an "All" tab plus one tab per panel with a pending-count badge', function (): void {
+    $endUserPage = ScreenshotPage::factory()->create(['panel' => 'enduser']);
+    $adminPage = ScreenshotPage::factory()->create(['panel' => 'admin']);
+
+    // Two pending enduser captures, zero pending admin (one approved).
+    ScreenshotCapture::factory()->for($endUserPage, 'screenshotPage')->create();
+    ScreenshotCapture::factory()->for($endUserPage, 'screenshotPage')->create([
+        'tag' => 'v2',
+    ]);
+    ScreenshotCapture::factory()->for($adminPage, 'screenshotPage')->approved()->create();
+
+    $tabs = (new \Visualbuilder\FilamentScreenshotReview\Filament\Resources\ScreenshotCaptures\Pages\ListScreenshotCaptures)
+        ->getTabs();
+
+    expect(array_keys($tabs))->toEqual(['all', 'admin', 'enduser'])
+        // Badge values may be returned eager or as a closure depending on the
+        // Filament release; resolve both shapes for the assertion.
+        ->and((int) resolveTabBadge($tabs['enduser']))->toBe(2)
+        ->and(resolveTabBadge($tabs['admin']))->toBeNull();
+});
+
+/**
+ * Filament's Tab::badge() can store either a value or a closure. Pull
+ * whichever shape it landed in.
+ */
+function resolveTabBadge(\Filament\Schemas\Components\Tabs\Tab $tab): mixed
+{
+    $reflection = new \ReflectionClass($tab);
+    if (! $reflection->hasProperty('badge')) {
+        return null;
+    }
+    $prop = $reflection->getProperty('badge');
+    $prop->setAccessible(true);
+    $value = $prop->getValue($tab);
+
+    return is_callable($value) ? $value() : $value;
+}
