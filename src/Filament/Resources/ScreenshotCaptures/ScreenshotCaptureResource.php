@@ -10,8 +10,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Width;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\ViewColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -57,10 +58,40 @@ class ScreenshotCaptureResource extends Resource
                 'lg' => 3,
                 '2xl' => 4,
             ])
+            // Per-page options chosen so every page fills the grid evenly at
+            // every breakpoint — 12, 24, 48 are all multiples of 1, 2, 3, 4
+            // (the column counts at default / md / lg / 2xl). No half-empty
+            // rows on the last page regardless of viewport width.
+            ->paginated([12, 24, 48, 'all'])
+            ->defaultPaginationPageOption(24)
+            // Cards composed from native Filament columns — Stack lays each
+            // cell vertically; ImageColumn / TextColumn carry their own
+            // theming so dark mode + status colours come from the enum's
+            // HasColor/HasIcon implementation. The view-image record action
+            // (defined further down) gives us the click-to-zoom modal.
             ->columns([
                 Stack::make([
-                    ViewColumn::make('card')
-                        ->view('filament-screenshot-review::columns.capture-card'),
+                    ImageColumn::make('image_url')
+                        ->state(fn (ScreenshotCapture $r): string =>
+                            Storage::disk($r->s3_disk)->url($r->s3_key))
+                        ->height(360)
+                        ->extraImgAttributes([
+                            'style' => 'object-fit:contain;width:100%;background:#f9fafb;cursor:zoom-in;',
+                            'loading' => 'lazy',
+                        ])
+                        ->action(static::viewImageAction()),
+                    TextColumn::make('title')
+                        ->state(fn (ScreenshotCapture $r): string =>
+                            $r->screenshotPage->panel . ' · ' .
+                            ($r->screenshotPage->label ?? $r->screenshotPage->slug))
+                        ->weight('bold'),
+                    TextColumn::make('viewport_mode')
+                        ->state(fn (ScreenshotCapture $r): string =>
+                            $r->screenshotPage->viewport . '-' . $r->screenshotPage->mode)
+                        ->badge()
+                        ->color('gray'),
+                    TextColumn::make('status')
+                        ->badge(),
                 ]),
             ])
             ->filters([
@@ -147,6 +178,28 @@ class ScreenshotCaptureResource extends Resource
             ->distinct()
             ->pluck('panel', 'panel')
             ->all();
+    }
+
+    /**
+     * Click-to-zoom action wired to the ImageColumn. Opens a Filament modal
+     * (no custom blade / Alpine needed) showing the full-resolution capture
+     * — uses Filament's native modal + render-hook stack, so dark mode +
+     * theming are inherited.
+     */
+    protected static function viewImageAction(): Action
+    {
+        return Action::make('view_image')
+            ->modalHeading(fn (ScreenshotCapture $r): string =>
+                $r->screenshotPage->panel . ' · ' .
+                ($r->screenshotPage->label ?? $r->screenshotPage->slug) .
+                ' (' . $r->screenshotPage->viewport . '-' . $r->screenshotPage->mode . ')')
+            ->modalContent(fn (ScreenshotCapture $r) => view(
+                'filament-screenshot-review::components.lightbox',
+                ['url' => Storage::disk($r->s3_disk)->url($r->s3_key)],
+            ))
+            ->modalWidth(Width::SevenExtraLarge)
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Close');
     }
 
     protected static function approveAction(): Action
