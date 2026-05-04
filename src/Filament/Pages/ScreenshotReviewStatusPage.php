@@ -17,6 +17,8 @@ class ScreenshotReviewStatusPage extends Page
 
     protected static ?string $navigationLabel = 'Status';
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Screenshot Review';
+
     protected static ?int $navigationSort = 1;
 
     protected static ?string $slug = '';
