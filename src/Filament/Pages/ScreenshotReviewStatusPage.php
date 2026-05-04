@@ -109,7 +109,40 @@ class ScreenshotReviewStatusPage extends Page
                     'status' => ['values' => [ScreenshotStatus::PENDING->value]],
                 ],
             ]),
+            'catalogue_url' => $this->catalogueUrl($key),
         ];
+    }
+
+    /**
+     * Public S3 URL of the per-panel `latest/index.html` catalogue page
+     * — the browsable grid the catalogue produces alongside each
+     * dispatch. Returns null when the catalogue isn't loaded
+     * standalone), or when the panel has no captures yet (so we don't
+     * link to a 404).
+     */
+    protected function catalogueUrl(string $key): ?string
+    {
+        if (! class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::class)) {
+            return null;
+        }
+
+        $env = \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::resolveEnv();
+        $panelId = \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::panelInternalId($key);
+        $disk = \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::disk();
+
+        $indexKey = \Visualbuilder\FilamentScreenshotCatalogue\Services\ScreenshotConfig::s3Key(
+            $env, $panelId, 'latest', '', 'index.html',
+        );
+
+        try {
+            if (! Storage::disk($disk)->exists($indexKey)) {
+                return null;
+            }
+
+            return Storage::disk($disk)->url($indexKey);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     protected function descriptorLabel(string $key): string

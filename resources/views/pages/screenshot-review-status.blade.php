@@ -45,7 +45,19 @@
                     @endif
                 </div>
 
-                <div class="mt-3 flex justify-end">
+                <div class="mt-3 flex items-center justify-end gap-3">
+                    @if (! empty($card['catalogue_url']))
+                        <a
+                            href="{{ $card['catalogue_url'] }}"
+                            target="_blank"
+                            rel="noopener"
+                            class="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-300"
+                            title="Open the public S3 catalogue index in a new tab"
+                        >
+                            Catalogue ↗
+                        </a>
+                    @endif
+
                     <a
                         href="{{ $card['review_url'] }}"
                         class="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-500"
