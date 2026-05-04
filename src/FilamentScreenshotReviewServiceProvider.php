@@ -44,6 +44,19 @@ class FilamentScreenshotReviewServiceProvider extends PackageServiceProvider
     {
         ScreenshotPage::observe(ScreenshotPageObserver::class);
 
+        // Listen for the catalogue's ScreenshotCaptured event so the
+        // review UI fills incrementally as a capture batch progresses,
+        // instead of waiting for the batch's `finally` sync to fire at
+        // the end. Gated on the catalogue's event class existing — no
+        // hard dep, the review package still works standalone with the
+        // command-driven sync flow.
+        if (class_exists(\Visualbuilder\FilamentScreenshotCatalogue\Events\ScreenshotCaptured::class)) {
+            \Illuminate\Support\Facades\Event::listen(
+                \Visualbuilder\FilamentScreenshotCatalogue\Events\ScreenshotCaptured::class,
+                \Visualbuilder\FilamentScreenshotReview\Listeners\CreateScreenshotCaptureRow::class,
+            );
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../.claude/commands' => base_path('.claude/commands'),
