@@ -1,6 +1,17 @@
 @php
     $record = $getRecord();
+    // Append the etag (md5 of the uploaded bytes) as a cache-buster
+    // query param. The S3 key is canonical per (panel, slug,
+    // viewport, mode, tag) — so re-captures overwrite the same key
+    // and the browser would otherwise serve stale cached bytes
+    // (especially in the lightbox, which often shows the previous
+    // batch's image until a hard reload). The query param doesn't
+    // affect the S3 fetch but invalidates the browser's image cache
+    // any time the content changes.
     $url = \Illuminate\Support\Facades\Storage::disk($record->s3_disk)->url($record->s3_key);
+    if (! empty($record->etag)) {
+        $url .= (str_contains($url, '?') ? '&' : '?') . 'v=' . substr($record->etag, 0, 12);
+    }
     $page = $record->screenshotPage;
     $caption = $page->panel . ' · ' . ($page->label ?? $page->slug)
         . ' (' . $page->viewport . '-' . $page->mode . ')';
