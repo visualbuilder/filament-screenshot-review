@@ -164,6 +164,8 @@ class SyncScreenshotPagesCommand extends Command
                             $existing->fill([
                                 'url' => (string) ($entry['url'] ?? $existing->url),
                                 'label' => $entry['label'] ?? $existing->label,
+                                'type' => (string) ($entry['type'] ?? $existing->type ?? 'page'),
+                                'auth' => $entry['auth'] ?? null,
                                 'sort' => (int) ($entry['sort'] ?? $existing->sort),
                                 'removed_at' => null,
                             ])->save();
@@ -177,6 +179,8 @@ class SyncScreenshotPagesCommand extends Command
                                 'mode' => $mode,
                                 'url' => (string) ($entry['url'] ?? '/'),
                                 'label' => $entry['label'] ?? null,
+                                'type' => (string) ($entry['type'] ?? 'page'),
+                                'auth' => $entry['auth'] ?? null,
                                 'sort' => (int) ($entry['sort'] ?? 1000),
                                 'included' => true,
                             ]);

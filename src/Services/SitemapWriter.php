@@ -43,13 +43,25 @@ class SitemapWriter
             ->get()
             ->unique(fn (ScreenshotPage $p) => $p->slug)
             ->values()
-            ->map(fn (ScreenshotPage $p) => [
-                'slug' => $p->slug,
-                'label' => $p->label ?? $p->slug,
-                'url' => $p->url,
-                'type' => 'page',
-                'sort' => $p->sort,
-            ])
+            ->map(function (ScreenshotPage $p): array {
+                $entry = [
+                    'slug' => $p->slug,
+                    'label' => $p->label ?? $p->slug,
+                    'url' => $p->url,
+                    'type' => $p->type ?? 'page',
+                    'sort' => $p->sort,
+                ];
+
+                // Auth-context flag travels through to the capture
+                // pipeline so the runner knows to use a throwaway
+                // guest browser for /login etc. Older rows (pre-
+                // type/auth migration) won't have it set.
+                if (filled($p->auth)) {
+                    $entry['auth'] = $p->auth;
+                }
+
+                return $entry;
+            })
             ->all();
 
         $directory = dirname($path);

@@ -37,6 +37,8 @@ class ScreenshotPage extends Model
         'mode',
         'url',
         'label',
+        'type',
+        'auth',
         'sort',
         'included',
         'removed_at',
