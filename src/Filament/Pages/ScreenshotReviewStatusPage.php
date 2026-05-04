@@ -21,10 +21,11 @@ class ScreenshotReviewStatusPage extends Page
 
     protected static ?int $navigationSort = 1;
 
-    // Was '' (panel root) which made Filament's sidebar collapse the nav
-    // group around it and misalign sibling links. Give it a proper path
-    // segment so it sits as a normal entry inside the group.
-    protected static ?string $slug = 'screenshot-review-status';
+    // Lives at the panel root (`/design-system/`) so it acts as the
+    // landing page when reviewers click the panel name. Changing this
+    // to a non-empty slug breaks Filament's panel-home redirect on
+    // hosts that don't register an alternative root page.
+    protected static ?string $slug = '';
 
     protected string $view = 'filament-screenshot-review::pages.screenshot-review-status';
 
