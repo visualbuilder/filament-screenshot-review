@@ -71,6 +71,25 @@ class ListScreenshotCaptures extends ListRecords
                     $failed = [];
 
                     foreach ($panels as $panel) {
+                        // Always regenerate the sitemap before dispatch.
+                        // The catalogue's `screenshot:dispatch` self-
+                        // heals only when the sitemap is missing or
+                        // empty — so a stale sitemap (e.g. one written
+                        // before the catalogue picked up authEntries
+                        // dedup, or before a host added a new resource)
+                        // would silently flow through with bad
+                        // entries. Regenerate every time so the UI
+                        // button always captures against the
+                        // current panel state.
+                        Artisan::call('panel:sitemap', ['--panel' => $panel]);
+
+                        // Also re-sync the screenshot_pages table so
+                        // any new/excluded slugs land in the DB before
+                        // captures attach to them.
+                        if (\Illuminate\Support\Facades\Artisan::all()['screenshot-review:sync-pages'] ?? null) {
+                            Artisan::call('screenshot-review:sync-pages', ['--panel' => $panel]);
+                        }
+
                         $exit = Artisan::call('screenshot:dispatch', [
                             '--panel' => $panel,
                         ]);
@@ -256,7 +275,12 @@ class ListScreenshotCaptures extends ListRecords
             ->where('status', ScreenshotStatus::PENDING)
             ->whereHas(
                 'screenshotPage',
-                fn (Builder $q) => $q->where('panel', $panelKey),
+                fn (Builder $q) => $q
+                    ->where('panel', $panelKey)
+                    // Exclude pages toggled off via the Pages resource
+                    // — same filter the Captures grid applies, so the
+                    // tab badge matches the visible row count.
+                    ->where('included', true),
             )
             ->count();
 
