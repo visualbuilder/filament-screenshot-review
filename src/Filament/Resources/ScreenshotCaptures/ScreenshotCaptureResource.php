@@ -24,6 +24,7 @@ use Visualbuilder\FilamentScreenshotReview\Contracts\TicketSink;
 use Visualbuilder\FilamentScreenshotReview\Enums\ScreenshotStatus;
 use Visualbuilder\FilamentScreenshotReview\Filament\Resources\ScreenshotCaptures\Pages\ListScreenshotCaptures;
 use Visualbuilder\FilamentScreenshotReview\Filament\Resources\ScreenshotCaptures\Pages\ViewScreenshotCapture;
+use Visualbuilder\FilamentScreenshotReview\Jobs\RecaptureScreenshotJob;
 use Visualbuilder\FilamentScreenshotReview\Models\ScreenshotCapture;
 
 class ScreenshotCaptureResource extends Resource
@@ -285,6 +286,7 @@ class ScreenshotCaptureResource extends Resource
             ->recordActions([
                 static::approveAction(),
                 static::requestChangesAction(),
+                static::recaptureAction(),
                 static::viewTicketAction(),
             ])
             ->checkIfRecordIsSelectableUsing(fn (): bool => false)
@@ -445,6 +447,46 @@ class ScreenshotCaptureResource extends Resource
             ->visible(fn (ScreenshotCapture $r): bool => filled($r->ticket_url))
             ->url(fn (ScreenshotCapture $r): string => (string) $r->ticket_url)
             ->openUrlInNewTab();
+    }
+
+    /**
+     * Per-row recapture: dispatch RecaptureScreenshotJob for this card's
+     * page so a single shot can be refreshed without re-running an
+     * entire panel batch. Useful for chasing a flaky capture or
+     * verifying a fix without going back to the regenerate modal.
+     */
+    protected static function recaptureAction(): Action
+    {
+        return Action::make('recapture')
+            ->label('Recapture')
+            ->color('gray')
+            ->icon('heroicon-o-arrow-path')
+            ->requiresConfirmation()
+            ->modalHeading('Recapture this screenshot')
+            ->modalDescription('Queues a single Playwright capture for this page. Refresh the grid in ~30 seconds to see the new shot.')
+            ->modalSubmitActionLabel('Recapture')
+            ->action(function (ScreenshotCapture $record): void {
+                if ($record->screenshot_page_id === null) {
+                    Notification::make()
+                        ->title('Cannot recapture')
+                        ->body('This capture is not linked to a page row.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                RecaptureScreenshotJob::dispatch(
+                    pageId: $record->screenshot_page_id,
+                    tag: (string) ($record->tag ?? 'latest'),
+                );
+
+                Notification::make()
+                    ->title('Recapture queued')
+                    ->body('A new shot is on the way.')
+                    ->success()
+                    ->send();
+            });
     }
 
     public static function getPages(): array
