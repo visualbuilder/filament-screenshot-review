@@ -60,8 +60,8 @@ class ScreenshotCaptureResource extends Resource
                 ->join('screenshot_pages', 'screenshot_pages.id', '=', 'screenshot_captures.screenshot_page_id')
                 ->orderBy('screenshot_pages.sort')
                 ->orderBy('screenshot_pages.slug')
-                ->orderBy('screenshot_captures.viewport')
-                ->orderBy('screenshot_captures.mode')
+                ->orderBy('screenshot_pages.viewport')
+                ->orderBy('screenshot_pages.mode')
                 ->select('screenshot_captures.*')
             )
             // contentGrid only applies when columns are wrapped in a Stack /
