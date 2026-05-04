@@ -21,7 +21,10 @@ class ScreenshotReviewStatusPage extends Page
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = '';
+    // Was '' (panel root) which made Filament's sidebar collapse the nav
+    // group around it and misalign sibling links. Give it a proper path
+    // segment so it sits as a normal entry inside the group.
+    protected static ?string $slug = 'screenshot-review-status';
 
     protected string $view = 'filament-screenshot-review::pages.screenshot-review-status';
 
