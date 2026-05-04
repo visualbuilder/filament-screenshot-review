@@ -47,11 +47,23 @@ class ScreenshotCaptureResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // Order by sitemap position rather than captured_at so the
+            // grid reads top-to-bottom of the panel: Dashboard first,
+            // resources by their navigationSort, auth pages last.
+            // captured_at desc was confusing because shots that ran
+            // first (dashboard, sort=1) ended up on the LAST page —
+            // reviewers paging through pending shots would see the
+            // landing screen at the very end of the queue.
             ->modifyQueryUsing(fn ($query) => $query
                 ->with(['screenshotPage', 'reviewedBy'])
-                ->whereIn('id', static::latestPerPageSubquery())
+                ->whereIn('screenshot_captures.id', static::latestPerPageSubquery())
+                ->join('screenshot_pages', 'screenshot_pages.id', '=', 'screenshot_captures.screenshot_page_id')
+                ->orderBy('screenshot_pages.sort')
+                ->orderBy('screenshot_pages.slug')
+                ->orderBy('screenshot_captures.viewport')
+                ->orderBy('screenshot_captures.mode')
+                ->select('screenshot_captures.*')
             )
-            ->defaultSort('captured_at', 'desc')
             // contentGrid only applies when columns are wrapped in a Stack /
             // Split layout — without one the table renders 1 row per record
             // regardless of the breakpoints below.
