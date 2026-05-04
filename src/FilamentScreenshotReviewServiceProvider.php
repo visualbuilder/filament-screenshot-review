@@ -22,6 +22,7 @@ class FilamentScreenshotReviewServiceProvider extends PackageServiceProvider
             ->hasMigrations([
                 '2026_05_03_000001_create_screenshot_pages_table',
                 '2026_05_03_000002_create_screenshot_captures_table',
+                '2026_05_04_180000_add_type_and_auth_to_screenshot_pages',
             ])
             ->runsMigrations()
             ->hasViews('filament-screenshot-review')
