@@ -17,7 +17,7 @@ beforeEach(function (): void {
     // the fake we just set up. The command falls back to filesystems.default
     // when the catalogue config isn't published, but here we just re-route
     // the catalogue's disk config key.
-    config(['panel-screenshot-catalogue.disk' => 'fake_s3']);
+    config(['screenshot-catalogue.disk' => 'fake_s3']);
 });
 
 function placeFakeCapture(string $key, string $contents = 'fake-png-bytes'): void
